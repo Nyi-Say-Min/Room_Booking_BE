@@ -1,10 +1,12 @@
 import dotenv from 'dotenv';
 import app from './app';
 import mongoose from 'mongoose';
+import { makeDb } from './db';
 
 dotenv.config();
 
 const PORT = process.env.PORT || 3000;
+makeDb();
 
 const server = app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`)

@@ -1,5 +1,11 @@
-import mongoose, { Schema } from "mongoose";
-import { Booking } from "../interfaces/booking";
+import mongoose, { Document, Schema } from "mongoose";
+export interface Booking extends Document{
+    id: string;
+    userId: mongoose.Types.ObjectId;
+    startTime: Date;
+    endTime: Date;
+    createdAt: Date;
+}
 
 const bookingSchema = new Schema<Booking>(
     {
@@ -16,6 +22,11 @@ const bookingSchema = new Schema<Booking>(
             type: Date,
             required: true,
         },
+        createdAt: {
+            type: Date,
+            required: true,
+            default: Date.now,
+        }
         
     },
     {

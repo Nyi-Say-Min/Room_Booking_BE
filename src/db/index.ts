@@ -5,12 +5,6 @@ dotenv.config();
 
 const MONGO_URI = process.env.MONGO_URI;
 
-if(!MONGO_URI){
-    throw new Error("MONGO URI is not defined");
-}
-
-mongoose.connect(MONGO_URI);
-
 mongoose.connection.on("connected", () => {
     console.log("Mongoose connected");
 });
