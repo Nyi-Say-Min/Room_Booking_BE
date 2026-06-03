@@ -14,6 +14,8 @@ function toBookingRecord(document: Booking): BookingRecord {
     };
 }
 
+type BookingWithUser = Booking & { userId: { name: string } | mongoose.Types.ObjectId };
+
 export class BookingRepository extends BaseRepository<Booking> implements BookingInterface {
     constructor() {
         super(booking);
@@ -33,8 +35,19 @@ export class BookingRepository extends BaseRepository<Booking> implements Bookin
     }
 
     async findAll(): Promise<BookingRecord[]> {
-        const bookings = await this.findAllDocuments();
-        return bookings.map(toBookingRecord);
+        const bookings = await this.model.find()
+            .populate<{ userId: { _id: mongoose.Types.ObjectId; name: string } }>("userId", "name")
+            .lean()
+            .exec();
+        
+        return bookings.map((document: any) => ({
+            id: document._id.toString(),
+            userId: typeof document.userId === 'object' ? document.userId._id.toString() : document.userId.toString(),
+            userName: document.userId?.name ?? null,
+            startTime: document.startTime,
+            endTime: document.endTime,
+            createdAt: document.createdAt
+        }));
     }
 
     async delete(id: string): Promise<boolean> {
@@ -56,12 +69,23 @@ export class BookingRepository extends BaseRepository<Booking> implements Bookin
         return this.model.aggregate([
             { $sort: { startTime: 1 } },
             {
+                $lookup: {
+                    from: "users",
+                    localField: "userId",
+                    foreignField: "_id",
+                    as: "user",
+                },
+            },
+            { $unwind: { path: "$user", preserveNullAndEmptyArrays: true } },
+            {
                 $group: {
                     _id: "$userId",
+                    userName: { $first: "$user.name" },
                     bookings: {
                         $push: {
                             id: { $toString: "$_id" },
                             userId: { $toString: "$userId" },
+                            userName: "$user.name",
                             startTime: "$startTime",
                             endTime: "$endTime",
                             createdAt: "$createdAt",
@@ -69,7 +93,7 @@ export class BookingRepository extends BaseRepository<Booking> implements Bookin
                     },
                 },
             },
-            { $project: { _id: 0, userId: { $toString: "$_id" }, bookings: 1 } },
+            { $project: { _id: 0, userId: { $toString: "$_id" }, userName: 1, bookings: 1 } },
         ]);
     }
 
@@ -77,7 +101,23 @@ export class BookingRepository extends BaseRepository<Booking> implements Bookin
         return this.model.aggregate([
             { $group: { _id: "$userId", totalBookings: { $sum: 1 } } },
             { $sort: { totalBookings: -1 } },
-            { $project: { _id: 0, userId: { $toString: "$_id" }, totalBookings: 1 } },
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "_id",
+                    foreignField: "_id",
+                    as: "user",
+                },
+            },
+            { $unwind: { path: "$user", preserveNullAndEmptyArrays: true } },
+            {
+                $project: {
+                    _id: 0,
+                    userId: { $toString: "$_id" },
+                    userName: "$user.name",
+                    totalBookings: 1,
+                },
+            },
         ]);
     }
 
