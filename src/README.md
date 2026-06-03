@@ -25,6 +25,28 @@ npm start
 Type checking
 npm run lint
 
+API Routes
+- GET /api/health
+
+Auth routes:
+- POST /api/auth/signup
+- POST /api/auth/signin
+
+Booking routes (authenticated):
+- POST /api/bookings/
+- GET /api/bookings/
+- DELETE /api/bookings/:id
+- GET /api/bookings/by-user (requires owner or admin)
+- GET /api/bookings/summary (requires owner or admin)
+
+User routes (authenticated + admin):
+- GET /api/users/
+- POST /api/users/
+- PATCH /api/users/:id/role
+- DELETE /api/users/:id
+
+Deployed endpoint is at `https://roombookingbe-production.up.railway.app`
+
 Database
 - The app reads MONGO_URI from the environment. Ensure MongoDB is reachable.
 
